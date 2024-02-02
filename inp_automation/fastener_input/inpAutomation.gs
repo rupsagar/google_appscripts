@@ -1,4 +1,4 @@
-function inpAutomation_v1(INP_DATA,INP_FILE_NAME) {
+function inpAutomation_v2(INP_DATA,INP_FILE_NAME) {
   const MAX_LINE_CHAR = 200; // max 256 allowed....lower value to be on safe side
   var inpFile = DocumentApp.create(INP_FILE_NAME);
 
@@ -27,7 +27,7 @@ function inpAutomation_v1(INP_DATA,INP_FILE_NAME) {
         if (INP_DATA[0][fieldID].match(/DATA.*/) == null) { // logic for parameters only
           if (INP_DATA[fastID][fieldID] == 'NA') { // if parameter is not required put NA in value
             continue;
-          } else if(INP_DATA[fastID][fieldID] == '') { // if parameter requires no value
+          } else if(INP_DATA[fastID][fieldID] == '' && typeof INP_DATA[fastID][fieldID] != 'number') { // if parameter requires no value
             newText = INP_DATA[0][fieldID];
             curLineChar = curLineChar + newText.length;
             if (curLineChar < MAX_LINE_CHAR) {
@@ -52,9 +52,14 @@ function inpAutomation_v1(INP_DATA,INP_FILE_NAME) {
           if (INP_DATA[fastID][fieldID] == 'NA') {
             continue;
           }
-          inpText.appendText('\n');
           newText = INP_DATA[fastID][fieldID]
-          curLineChar = newText.length;
+          if (INP_DATA[0][fieldID] == INP_DATA[0][fieldID-1]) { // fieldID will never be zero as the starting field will always be a keyword
+            inpText.appendText(', '); // if one data line has multiple entries
+            curLineChar = curLineChar + newText.length;
+          } else{
+            inpText.appendText('\n'); // if data line has only one entry
+            curLineChar = newText.length;
+          }
           inpText.appendText(newText); // data line should not exceed 256 characters
         }
       }
