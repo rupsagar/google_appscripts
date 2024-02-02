@@ -1,4 +1,4 @@
-function inpAutomation_v0(INP_DATA,INP_FILE_NAME) {
+function inpAutomation_v1(INP_DATA,INP_FILE_NAME) {
   const MAX_LINE_CHAR = 200; // max 256 allowed....lower value to be on safe side
   var inpFile = DocumentApp.create(INP_FILE_NAME);
 
@@ -6,43 +6,49 @@ function inpAutomation_v0(INP_DATA,INP_FILE_NAME) {
   var numField = INP_DATA[1].length;
 
   var inpText = inpFile.getBody().editAsText();
+  var printStarCard = false;
   var newText;
   var curLineChar = 0;
   var commaSpace = ', ';
   var commaEnter = ',\n';
   for (var fastID = 1; fastID <= numFast; fastID++) {
     for (var fieldID = 0; fieldID < numField; fieldID++) {
-      if (INP_DATA[0][fieldID][0] == '*') { // logic for keyword
-        inpText.appendText('\n***\n');
+      if (INP_DATA[0][fieldID][0] == '*' && INP_DATA[fastID][fieldID] == 'NA') { // logic for keyword...if star card not to be included
+        printStarCard = false;
+      } else if (INP_DATA[0][fieldID][0] == '*' && INP_DATA[fastID][fieldID] == '') { // if star card to be included
+        printStarCard = true;
+        inpText.appendText('\n');
         newText = INP_DATA[0][fieldID];
         curLineChar = newText.length;
         if (curLineChar < MAX_LINE_CHAR) {
           inpText.appendText(newText);
         }
-      }
-      
-      else { // logic for parameters and data lines
-        if (INP_DATA[0][fieldID].match(/DATA.*/) == null) { // logic for parameters only, not for data lines
-          if (INP_DATA[fastID][fieldID] != '') { // if parameter value is not omitted as it may be mandatory or provided even if it is optional
+      } else if (INP_DATA[0][fieldID][0] != '*' && printStarCard == true) { // logic for parameters and data lines
+        if (INP_DATA[0][fieldID].match(/DATA.*/) == null) { // logic for parameters only
+          if (INP_DATA[fastID][fieldID] == 'NA') { // if parameter is not required put NA in value
+            continue;
+          } else if(INP_DATA[fastID][fieldID] == '') { // if parameter requires no value
+            newText = INP_DATA[0][fieldID];
+            curLineChar = curLineChar + newText.length;
+            if (curLineChar < MAX_LINE_CHAR) {
+              inpText.appendText(commaSpace + newText);
+              curLineChar = curLineChar + commaSpace.length;
+            } else {
+              inpText.appendText(commaEnter + newText);
+              curLineChar = newText.length;
+            }
+          } else {
             newText = INP_DATA[0][fieldID] + '=' + INP_DATA[fastID][fieldID]
             curLineChar = curLineChar + newText.length;
             if (curLineChar < MAX_LINE_CHAR) {
               inpText.appendText(commaSpace + newText);
               curLineChar = curLineChar + commaSpace.length;
-            }
-            
-            else {
+            } else { // if parameter value is omitted if it is optional
               inpText.appendText(commaEnter + newText);
               curLineChar = newText.length;
             }
           }
-          
-          else { // if parameter value is omitted if it is optional
-            continue;
-          }
-        }
-        
-        else { // logic for data lines
+        } else { // logic for data lines
           if (INP_DATA[fastID][fieldID] == 'NA') {
             continue;
           }
